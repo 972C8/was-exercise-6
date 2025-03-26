@@ -23,6 +23,7 @@ blinds("lowered").
 @start_plan
 +!start : td("https://was-course.interactions.ics.unisg.ch/wake-up-ontology#Blinds", Url) <-
     .print("Hello world");
+    makeArtifact("blinds", "org.hyperagents.jacamo.artifacts.wot.ThingArtifact", [Url], ArtId);
     ?mqttReady.
 
 /*
@@ -45,6 +46,40 @@ blinds("lowered").
 @react_to_message
 +message(Sender, Performative, Content) : true <-
     .print("Received message from ", Sender, " with performative: ", Performative, " and content: ", Content).
+
+/*
+* Plan for raising the blinds
+* Triggering event: addition of goal !raise_blinds
+* Context: the blinds are "lowered"
+* Body: raises the blinds
+*/
+@raise_blinds_plan
++!raise_blinds : blinds("lowered") <-
+    invokeAction("https://was-course.interactions.ics.unisg.ch/wake-up-ontology#SetState", ["raised"]);
+    -+blinds("raised").
+
+/*
+* Plan for lowering the blinds
+* Triggering event: addition of goal !lower_blinds
+* Context: the blinds are "raised"
+* Body: lowers the blinds
+*/
+@lower_blinds_plan
++!lower_blinds : blinds("raised") <-
+    invokeAction("https://was-course.interactions.ics.unisg.ch/wake-up-ontology#SetState", ["lowered"]);
+    -+blinds("lowered").
+
+
+/*
+* Plan for reacting to the addition of blinds state
+* Triggering event: addition of observable property blinds
+* Context: true (the plan is always applicable)
+* Body: prints the blinds state and sends message to personal assistant
+*/
+@blinds_plan
++blinds(State) : true <-
+    .print("Blinds ", State);
+    .send(personal_assistant, tell, blinds(State)).
 
 /* Import behavior of agents that work in CArtAgO environments */
 { include("$jacamoJar/templates/common-cartago.asl") }

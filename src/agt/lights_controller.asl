@@ -23,6 +23,7 @@ lights("off").
 @start_plan
 +!start : td("https://was-course.interactions.ics.unisg.ch/wake-up-ontology#Lights", Url) <-
     .print("Hello world");
+    makeArtifact("lights", "org.hyperagents.jacamo.artifacts.wot.ThingArtifact", [Url], ArtId);
     ?mqttReady.
 
 /*
@@ -46,6 +47,26 @@ lights("off").
 +message(Sender, Performative, Content) : true <-
     .print("Received message from ", Sender, " with performative: ", Performative, " and content: ", Content).
 
+@turn_on_lights_plan
++!turn_on_lights : lights("off") <-
+    invokeAction("https://was-course.interactions.ics.unisg.ch/wake-up-ontology#SetState", ["on"]);
+    -+lights("on").
+
+@turn_off_lights_plan
++!turn_off_lights : lights("on") <-
+    invokeAction("https://was-course.interactions.ics.unisg.ch/wake-up-ontology#SetState", ["off"]);
+    -+lights("off").
+
+/*
+* Plan for reacting to the addition of lights state
+* Triggering event: addition of observable property lights
+* Context: true (the plan is always applicable)
+* Body: prints the lights state and sends message to personal assistant
+*/
+@lights_plan
++lights(State) : true <-
+    .print("Lights are ", State);
+    .send(personal_assistant, tell, lights(State)).
 
 /* Import behavior of agents that work in CArtAgO environments */
 { include("$jacamoJar/templates/common-cartago.asl") }
