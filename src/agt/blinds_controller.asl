@@ -22,7 +22,18 @@ blinds("lowered").
 */
 @start_plan
 +!start : td("https://was-course.interactions.ics.unisg.ch/wake-up-ontology#Blinds", Url) <-
-    .print("Hello world").
+    .print("Hello world");
+    lookupArtifact("mqttArtifact", MQTTArtifactId); // lookup the mqtt artifact created by the personal assistant
+    focus(MQTTArtifactId).
+
+/* Plan for reacting to received messages
+ * Triggering event: addition of observable property message
+ * Context: true (the plan is always applicable)
+ * Body: prints the received message
+*/
+@react_to_message
++message(Sender, Performative, Content) : true <-
+    .print("Received message from ", Sender, " with performative: ", Performative, " and content: ", Content).
 
 /* Import behavior of agents that work in CArtAgO environments */
 { include("$jacamoJar/templates/common-cartago.asl") }
