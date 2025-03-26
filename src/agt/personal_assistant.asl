@@ -16,6 +16,12 @@ broadcast(jason).
 @start_plan
 +!start : true <-
     .print("Hello world");
+    !mqttCreate.
+
+/*
+* Plan for creating MQTT artifact. Looked up by blinds_controller and lights_controller.
+*/
++!mqttCreate : true <-
     makeArtifact("mqttArtifact", "room.MQTTArtifact", ["client-id-tibor"], MQTTArtifactId);
     focus(MQTTArtifactId);
     !send_message("personal_assistant", "tell", "Personal assistant is ready and using MQTT.").

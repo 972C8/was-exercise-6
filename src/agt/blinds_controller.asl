@@ -23,8 +23,19 @@ blinds("lowered").
 @start_plan
 +!start : td("https://was-course.interactions.ics.unisg.ch/wake-up-ontology#Blinds", Url) <-
     .print("Hello world");
-    lookupArtifact("mqttArtifact", MQTTArtifactId); // lookup the mqtt artifact created by the personal assistant
+    ?mqttReady.
+
+/*
+* Plan for looking up created MQTT artifact by personal assistant.
+* If not ready yet, wait for 50ms and retry.
+* According to: https://www.emse.fr/~boissier/enseignement/maop13/courses/cartagoByExamples.pdf (p.18)
+*/
++?mqttReady : true <-
+    lookupArtifact("mqttArtifact", MQTTArtifactId);
     focus(MQTTArtifactId).
+-?mqttReady : true <-
+    .wait(50);
+    ?mqttReady.
 
 /* Plan for reacting to received messages
  * Triggering event: addition of observable property message
