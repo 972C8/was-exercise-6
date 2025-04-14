@@ -47,5 +47,12 @@ upcoming_event(_).
     .print("Upcoming event: ", UpcomingEvent);
     .send(personal_assistant, tell, upcoming_event(UpcomingEvent)).
 
+/*
+* Refuse the goal to increase illuminance as it cannot do it
+*/
+@cfp_increase_illuminance_plan
++!cfp(increase_illuminance)[source(Sender)] : true <-
+    .send(Sender, tell, refuse(increase_illuminance)).
+
 /* Import behavior of agents that work in CArtAgO environments */
 { include("$jacamoJar/templates/common-cartago.asl") }

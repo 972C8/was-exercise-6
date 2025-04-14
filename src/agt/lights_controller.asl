@@ -68,5 +68,25 @@ lights("off").
     .print("Lights are ", State);
     .send(personal_assistant, tell, lights(State)).
 
+/*
+* Plan for reacting to the addition of a goal to increase illuminance
+*/
+@cfp_increase_illuminance_plan
++!cfp(increase_illuminance)[source(Sender)] : true <-
+    if (lights("off")) {
+        .send(Sender, tell, propose(turn_on_lights));
+    } else {
+        .send(Sender, tell, refuse(increase_illuminance));
+    }.
+
+@accept_increase_illuminance_plan
++acceptProposal(turn_on_lights)[source(Sender)] : true <-
+    !turn_on_lights;
+    .send(Sender, tell, inform_done(turn_on_lights)).
+
+@refuse_increase_illuminance_plan
++rejectProposal(turn_on_lights)[source(Sender)] : true <-
+    .print("Proposal to turn on lights refused by ", Sender).
+
 /* Import behavior of agents that work in CArtAgO environments */
 { include("$jacamoJar/templates/common-cartago.asl") }

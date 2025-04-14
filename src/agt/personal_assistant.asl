@@ -1,9 +1,11 @@
 // personal assistant agent
 
-broadcast(jason).
+broadcast(jason). // Use jason or mqtt for broadcasting
 
 natural_light(0).
 artificial_light(1).
+
+best_option(Number) :- Number = 0.
 
 /* Initial goals */ 
 
@@ -47,20 +49,92 @@ artificial_light(1).
 +!send_message(Sender, Performative, Content) : true <-
     sendMsg(Sender, Performative, Content).
 
-//Task 4.1
-@upcoming_event_now_owner_awake_plan
+//Task 4.1 + 4.2
+@upcoming_event_now_asleep_plan
++upcoming_event("now") : owner_state("asleep") <-
+    !start_wake_up_routine.
+
+@upcoming_event_now_awake_plan
 +upcoming_event("now") : owner_state("awake") <-
     .print("Enjoy your event").
 
-//Task 4.2
-@upcoming_event_now_owner_asleep_plan
-+upcoming_event("now") : owner_state("asleep") <-
-    .print("Start wake-up routine");
+@owner_state_awake_upcoming_event_now_plan
++owner_state("awake") : upcoming_event("now") <-
+    .print("Enjoy your event").
+
+@owner_state_asleep_upcoming_event_now_plan
++owner_state("asleep") : upcoming_event("now") <-
     !start_wake_up_routine.
 
 // //Task 4.3
-// @start_wake_up_routine_plan
+@start_wake_up_routine_plan
++!start_wake_up_routine : true <-
+    .print("Starting wake-up routine");
+    .abolish(propose(_));
+    .abolish(refuse(_));
+    -+bidding_status(true);
+    .broadcast(achieve, cfp(increase_illuminance)); //TODO: add if else for jason / mqtt broadcast
+    .print("Awaiting bids");
+    .wait(2000); // Wait for 1 second to give time for the proposals to arrive
+    -+bidding_status(false);
+    .print("Bidding closed");
+    !check_cfp_proposals.
 
+@cfp_propose_plan
++propose(Action)[source(Sender)] : bidding_status(true) <-
+    .print("Received a proposal from ", Sender, " to ", Action).
+
+@cfp_refuse_plan
++refuse(Action)[source(Sender)] : bidding_status(true) <-
+    .print("Received a refusal from ", Sender, " to ", Action).
+
+/*
+* Plan for checking the proposals received
+* Triggering event: addition of goal !check_cfp_proposals
+* Context: true (the plan is always applicable)
+* Body: checks the proposals received and sends accept or reject messages
+*/
+@check_cfp_proposals_plan
++!check_cfp_proposals : true <-
+    .count(propose(Action)[source(Sender)], X);
+    if (X > 0) {
+        .findall([Action, Sender], propose(Action)[source(Sender)], ListOfProposals);
+        .print("Proposals received: ", ListOfProposals);
+        .length(ListOfProposals, L);
+        -+counter(0);
+        -+action_performed(false);
+        while (counter(Counter) & Counter < L) {
+            .nth(Counter, ListOfProposals, [Action, Sender]);
+            if (action_performed(Performed) & Performed = false & Action = turn_on_lights & artificial_light(Number) & best_option(Number)) {
+                .print(Action, " is the best option");
+                -+natural_light(0);
+                -+artificial_light(1);
+                .send(Sender, tell, acceptProposal(Action));
+                -+action_performed(true);
+                .abolish(owner_state(_));
+            } elif (action_performed(Performed) & Performed = false & Action = raise_blinds & natural_light(Number) & best_option(Number)) {
+                .print(Action, " is the best option");
+                -+natural_light(1);
+                -+artificial_light(0);
+                .send(Sender, tell, acceptProposal(Action));
+                -+action_performed(true);
+                .abolish(owner_state(_));
+            } else {
+                .print(Action, " is not the best option");
+                .send(Sender, tell, rejectProposal(Action));
+            }
+            -+counter(Counter + 1);
+        }
+    } else {
+        // Task 4.4
+        .print("No proposals received.");
+        !send_message("personal_assistant", "tell", "Asking user's friend to wake them up.");
+    }.
+
+@inform_done_plan
++inform_done(Action) : true <-
+    .print("The following action has been completed: ", Action);
+    .abolish(inform_done(Action)).
 
 /* Import behavior of agents that work in CArtAgO environments */
 { include("$jacamoJar/templates/common-cartago.asl") }

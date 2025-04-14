@@ -81,5 +81,25 @@ blinds("lowered").
     .print("Blinds ", State);
     .send(personal_assistant, tell, blinds(State)).
 
+/*
+* Plan for reacting to the addition of a goal to increase illuminance
+*/
+@cfp_increase_illuminance_plan
++!cfp(increase_illuminance)[source(Sender)] : true <-
+    if (blinds("lowered")) {
+        .send(Sender, tell, propose(raise_blinds));
+    } else {
+        .send(Sender, tell, refuse(increase_illuminance));
+    }.
+
+@accept_raise_blinds_plan
++acceptProposal(raise_blinds)[source(Sender)] : true <-
+    !raise_blinds;
+    .send(Sender, tell, inform_done(raise_blinds)).
+
+@refuse_raise_blinds_plan
++rejectProposal(raise_blinds)[source(Sender)] : true <-
+    .print("Proposal to raise the blinds refused by ", Sender).
+
 /* Import behavior of agents that work in CArtAgO environments */
 { include("$jacamoJar/templates/common-cartago.asl") }
