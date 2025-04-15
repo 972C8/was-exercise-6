@@ -1,6 +1,8 @@
 // personal assistant agent
 
-broadcast(jason). // Use jason or mqtt for broadcasting
+// Use jason or mqtt for broadcasting
+// Replace jason with mqtt for mqtt broadcasting
+broadcast(jason). 
 
 natural_light(0).
 artificial_light(1).
@@ -70,12 +72,22 @@ best_option(Number) :- Number = 0.
 @start_wake_up_routine_plan
 +!start_wake_up_routine : true <-
     .print("Starting wake-up routine");
+    !send_message("personal_assistant", "tell", "Starting wake-up routine");
     .abolish(propose(_));
     .abolish(refuse(_));
     -+bidding_status(true);
-    .broadcast(achieve, cfp(increase_illuminance)); //TODO: add if else for jason / mqtt broadcast
+    // Broadcast based on the selected method
+    if (broadcast(jason)) {
+        .print("Broadcasting via jason");
+        .broadcast(achieve, cfp(increase_illuminance));
+    } elif (broadcast(mqtt)) {
+        .print("Broadcasting via mqtt");
+        !send_message("personal_assistant", "tell", "increase_illuminance");
+    } else {
+        .print("Broadcasting method unknown");
+    }
     .print("Awaiting bids");
-    .wait(2000); // Wait for 1 second to give time for the proposals to arrive
+    .wait(2000); // Wait 2 seconds for bids to arrive
     -+bidding_status(false);
     .print("Bidding closed");
     !check_cfp_proposals.
@@ -127,7 +139,7 @@ best_option(Number) :- Number = 0.
         }
     } else {
         // Task 4.4
-        .print("No proposals received.");
+        .print("Asking user's friend to wake them up.");
         !send_message("personal_assistant", "tell", "Asking user's friend to wake them up.");
     }.
 

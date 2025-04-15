@@ -45,7 +45,10 @@ lights("off").
 */
 @react_to_message
 +message(Sender, Performative, Content) : true <-
-    .print("Received message from ", Sender, " with performative: ", Performative, " and content: ", Content).
+    .print("Received message from ", Sender, " with performative: ", Performative, " and content: ", Content);
+    if (Content = "increase_illuminance") {
+        !cfp(increase_illuminance)[source(Sender)];
+    }.
 
 @turn_on_lights_plan
 +!turn_on_lights : lights("off") <-
