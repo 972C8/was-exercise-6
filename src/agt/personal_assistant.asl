@@ -72,7 +72,6 @@ best_option(Number) :- Number = 0.
 @start_wake_up_routine_plan
 +!start_wake_up_routine : true <-
     .print("Starting wake-up routine");
-    !send_message("personal_assistant", "tell", "Starting wake-up routine");
     .abolish(propose(_));
     .abolish(refuse(_));
     -+bidding_status(true);
